@@ -4,7 +4,7 @@
   "sourceRoot": "apps/api/src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "webpack": true,
+    "webpack": false,
     "tsConfigPath": "apps/api/tsconfig.app.json"
   },
   "monorepo": true,
@@ -35,6 +35,15 @@
       "sourceRoot": "libs/shared/src",
       "compilerOptions": {
         "tsConfigPath": "libs/shared/tsconfig.lib.json"
+      }
+    },
+    "profiles": {
+      "type": "application",
+      "root": "apps/profiles",
+      "entryFile": "main",
+      "sourceRoot": "apps/profiles/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/profiles/tsconfig.app.json"
       }
     }
   }

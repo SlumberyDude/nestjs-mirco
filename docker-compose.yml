@@ -12,3 +12,66 @@ services:
             - '15672:15672'
         env_file:
             - .env
+
+    auth:
+        build:
+            context: ./
+            dockerfile: ./apps/auth/Dockerfile
+        env_file:
+            - .env
+        depends_on:
+            - rabbitmq
+            - postgres
+        volumes:
+            - .:/usr/src/app # любые изменения в основной директории должны отражаться на состоянии контейнера
+            - /usr/src/app/node_modules # Эти изменения не будут отражаться
+        command: npm run start:dev auth # Перезаписывает CMD в Dockerfile. На боевом сервере нужна более специфичнаяя команда
+
+    profiles:
+        build:
+            context: ./
+            dockerfile: ./apps/profiles/Dockerfile
+        env_file:
+            - .env
+        depends_on:
+            - rabbitmq
+            - postgres
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        command: npm run start:dev profiles
+
+    api:
+        build:
+            context: ./
+            dockerfile: ./apps/api/Dockerfile
+        ports:
+            - '4000:5000'
+        env_file:
+            - .env
+        depends_on:
+            - rabbitmq
+            - auth
+            - profiles
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        command: npm run start:dev api
+
+    postgres:
+        image: postgres
+        env_file:
+            - .env
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./db/data:/var/lib/postgresql/data
+
+    postgres_admin:
+        image: dpage/pgadmin4
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        ports:
+            - '15432:80'

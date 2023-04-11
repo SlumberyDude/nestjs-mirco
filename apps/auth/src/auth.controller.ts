@@ -1,22 +1,29 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller } from '@nestjs/common';
 import { Ctx, MessagePattern, RmqContext } from '@nestjs/microservices';
-import { AuthService } from './auth.service';
+import { SharedService } from 'y/shared';
+import { CreateUserDto } from './users/dto/create.user.dto';
+import { UsersService } from './users/users.service';
 
 @Controller()
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly userService: UsersService,
+        private readonly sharedService: SharedService,
+    ) {}
 
-    @Get()
-    getHello(): string {
-        return this.authService.getHello();
+    @MessagePattern({ cmd: 'get-users' })
+    async getUser(@Ctx() context: RmqContext) {
+        this.sharedService.acknowledgeMessage(context);
+
+        return await this.userService.getAllUsers();
     }
 
-    @MessagePattern({ cmd: 'get-user' })
-    async getUser(@Ctx() context: RmqContext) {
-        const channel = context.getChannelRef(); // Позволяет нам получить определенные сообщения из контекста
-        const message = context.getMessage();
-        channel.ack(message); // Извещаем брокер о получении сообщения (?)
-
-        return { user: 'USER' };
+    @MessagePattern({ cmd: 'post-user' })
+    async postUser(
+        @Ctx() context: RmqContext,
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+        
+        return await this.userService.createUser({email: 'jenek@mail.ru', password: '123123'});
     }
 }
