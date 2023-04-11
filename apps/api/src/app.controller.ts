@@ -5,7 +5,7 @@ import { ClientProxy } from '@nestjs/microservices';
 export class AppController {
     constructor(
         @Inject('AUTH_SERVICE') private authService: ClientProxy,
-        // @Inject('PROFILES_SERVICE') private profilesService: ClientProxy,
+        @Inject('PROFILES_SERVICE') private profilesService: ClientProxy,
     ) {}
     
     @Get('auth')
@@ -26,11 +26,11 @@ export class AppController {
         )
     }
 
-    // @Get('profiles')
-    // async getProfiles() {
-    //     return this.profilesService.send({
-    //         cmd: 'get-profiless',
-    //     },
-    //     {});
-    // }
+    @Get('profiles')
+    async getProfiles() {
+        return this.profilesService.send({
+            cmd: 'get-profiles',
+        },
+        {});
+    }
 }
