@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { CreateUserDto } from './dto/create.user.dto';
+import { CreateUserDto } from 'y/shared/dto';
 import { UpdateUserDto } from './dto/update.user.dto';
 import { User } from './users.model';
 
@@ -10,7 +10,10 @@ export class UsersService {
     constructor(@InjectModel(User) private userRepository: typeof User) {}
 
     async createUser(dto: CreateUserDto) {
-        return await this.userRepository.create(dto);
+        console.log(`Dto in usersService: ${dto}`);
+        const user = await this.userRepository.create(dto);
+        console.log(`got user: ${user}`);
+        return user;
     }
 
     async getAllUsers() {

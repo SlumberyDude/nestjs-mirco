@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SharedModule } from 'y/shared';
-import { PostgresDBModule } from 'y/shared/postgresdb.module';
 import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -12,10 +12,10 @@ import { UsersModule } from './users/users.module';
             envFilePath: "./.env"
         }),
         SharedModule,
-        PostgresDBModule,
+        SharedModule.registerDatabase('POSTGRES_AUTH_HOST'),
         UsersModule,
     ],
     controllers: [AuthController],
-    providers: [],
+    providers: [AuthService],
 })
 export class AuthModule {}

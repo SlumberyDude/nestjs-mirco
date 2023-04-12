@@ -21,9 +21,12 @@
       "y/shared": [
         "libs/shared/src"
       ],
+      "y/shared/dto": [
+        "libs/shared/src/dto/index.ts"
+      ],
       "y/shared/*": [
         "libs/shared/src/*"
-      ]
+      ],
     }
   }
 }
