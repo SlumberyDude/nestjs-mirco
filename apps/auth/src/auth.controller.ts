@@ -1,9 +1,10 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseFilters, ValidationPipe } from '@nestjs/common';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
-import { SharedService } from 'y/shared';
+import { HttpExceptionFilter, ParseJsonPipe, SharedService } from 'y/shared';
 import { CreateUserDto } from 'y/shared/dto';
 import { UsersService } from './users/users.service';
 import { AuthService } from './auth.service';
+import { Transform } from 'class-transformer';
 
 @Controller()
 export class AuthController {
@@ -29,14 +30,14 @@ export class AuthController {
         return await this.userService.createUser({email: 'jenek@mail.ru', password: '123123'});
     }
 
+    @UseFilters(new HttpExceptionFilter())
     @MessagePattern({ cmd: 'register'})
     async registerUser(
         @Ctx() context: RmqContext,
-        @Payload() stringDto: string
+        @Payload(new ParseJsonPipe(), new ValidationPipe()) dto: CreateUserDto
     ) {
         this.sharedService.acknowledgeMessage(context);
 
-        const dto = JSON.parse(stringDto) as CreateUserDto;
         console.log(`got payload dto: ${dto.email} ${dto.password}`);
 
         return await this.authService.register(dto);
