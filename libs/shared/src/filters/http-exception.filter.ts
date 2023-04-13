@@ -12,11 +12,8 @@ export class HttpExceptionFilter implements  ExceptionFilter {
     catch(exception: HttpException, host: ArgumentsHost): HttpRpcException {
         const resp = exception.getResponse() as HttpResp;
 
-        let rpcException = new HttpRpcException(resp.error);
-        
-        rpcException.messages = resp.message;
-        rpcException.statusCode = HttpStatus.BAD_REQUEST;
-        
+        const rpcException = new HttpRpcException(resp, HttpStatus.BAD_REQUEST);
+
         return rpcException;
     };
 }

@@ -1,6 +1,8 @@
 export * from './shared.module';
 export * from './shared.service';
-export * from './auth.guard';
+
+// guards
+export * from './guards/auth.guard';
 
 // pipes
 export * from './pipes/parse.json.pipe';

@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { AuthGuard } from 'y/shared';
 import { CreateUserDto } from 'y/shared/dto';
 
 @Controller()
@@ -27,6 +28,7 @@ export class AppController {
         )
     }
 
+    @UseGuards(AuthGuard)
     @Get('profiles')
     async getProfiles() {
         return this.profilesService.send({
@@ -35,16 +37,29 @@ export class AppController {
         {});
     }
 
+    
     @Post('auth/register')
     async register(
         @Body() createUserDto: CreateUserDto
     ) {
-        console.log(`got dto: ${createUserDto}`);
         return this.authService.send(
             {
                 cmd: 'register',
             },
-            JSON.stringify(createUserDto)
+            createUserDto
+        )
+    }
+
+    @Post('auth/login')
+    async login(
+        @Body() createUserDto: CreateUserDto
+    ) {
+        return this.authService.send(
+            {
+                cmd: 'login',
+            },
+            // JSON.stringify(createUserDto),
+            createUserDto
         )
     }
 }

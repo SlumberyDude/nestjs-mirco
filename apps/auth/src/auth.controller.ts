@@ -1,10 +1,11 @@
-import { Controller, UseFilters, ValidationPipe } from '@nestjs/common';
+import { Controller, UseFilters, UseGuards, ValidationPipe } from '@nestjs/common';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
-import { HttpExceptionFilter, ParseJsonPipe, SharedService } from 'y/shared';
+import { HttpExceptionFilter, SharedService } from 'y/shared';
 import { CreateUserDto } from 'y/shared/dto';
 import { UsersService } from './users/users.service';
 import { AuthService } from './auth.service';
-import { Transform } from 'class-transformer';
+import { RolesGuard } from './roles.guard';
+import { DtoValidationPipe } from 'y/shared/pipes/dto-validation.pipe';
 
 @Controller()
 export class AuthController {
@@ -31,10 +32,10 @@ export class AuthController {
     }
 
     @UseFilters(new HttpExceptionFilter())
-    @MessagePattern({ cmd: 'register'})
+    @MessagePattern({ cmd: 'register' })
     async registerUser(
         @Ctx() context: RmqContext,
-        @Payload(new ParseJsonPipe(), new ValidationPipe()) dto: CreateUserDto
+        @Payload(new DtoValidationPipe()) dto: CreateUserDto
     ) {
         this.sharedService.acknowledgeMessage(context);
 
@@ -42,4 +43,30 @@ export class AuthController {
 
         return await this.authService.register(dto);
     }
+
+    @MessagePattern({ cmd: 'verify-jwt'})
+    @UseFilters(new HttpExceptionFilter())
+    @UseGuards(RolesGuard)
+    async verifyJwt(
+        @Ctx() context: RmqContext,
+        @Payload() payload: { jwt: string },
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+        console.log(`[auth][verify-jwt] controller.`);
+
+        return await this.authService.verifyJwt(payload.jwt);
+    }
+
+    @UseFilters(new HttpExceptionFilter())
+    @MessagePattern({ cmd: 'login' })
+    async login (
+        @Ctx() context: RmqContext,
+        @Payload(new DtoValidationPipe()) userDto: CreateUserDto
+    ) {
+        console.log(`got Dto in Login in Auth.controller: ${JSON.stringify(userDto)}`);
+        this.sharedService.acknowledgeMessage(context);
+
+        return this.authService.login(userDto);
+    }
+
 }
