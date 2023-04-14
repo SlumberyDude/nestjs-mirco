@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Inject, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { AuthGuard } from 'y/shared';
-import { CreateUserDto } from 'y/shared/dto';
+import { AuthGuard, RolesGuard, DtoValidationPipe } from 'y/shared';
+import { CreateRoleDto, CreateUserDto, EmailUserParamDto, RegisterProfileDto, UpdateProfileDto } from 'y/shared/dto';
 
 @Controller()
 export class AppController {
@@ -10,34 +10,24 @@ export class AppController {
         @Inject('PROFILES_SERVICE') private profilesService: ClientProxy,
     ) {}
     
-    @Get('auth')
-    async getUsers() {
-        return this.authService.send({
-            cmd: 'get-users',
-        },
-        {});
-    }
+    // AUTHORIZATION SERVICE ENDPOINTS
 
-    @Post('auth')
-    async postUser() {
+    // ROLES
+    @UseGuards(AuthGuard, RolesGuard)
+    @Post('roles/create')
+    async createRole(
+        @Body() createRoleDto: CreateRoleDto
+    ) {
         return this.authService.send(
             {
-                cmd: 'post-user',
+                cmd: 'create-role',
             },
-            {},
+            createRoleDto,
         )
     }
 
-    @UseGuards(AuthGuard)
-    @Get('profiles')
-    async getProfiles() {
-        return this.profilesService.send({
-            cmd: 'get-profiles',
-        },
-        {});
-    }
+    // AUTH
 
-    
     @Post('auth/register')
     async register(
         @Body() createUserDto: CreateUserDto
@@ -62,4 +52,73 @@ export class AppController {
             createUserDto
         )
     }
+
+    // PROFILES
+
+    @Post('profiles/register')
+    async registerProfile(
+        @Body() dto: RegisterProfileDto
+    ) {
+        return this.profilesService.send({
+            cmd: 'register-profile',
+            }, dto,
+        );
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('profiles')
+    async getProfiles() {
+        return this.profilesService.send({
+            cmd: 'get-profiles',
+        },
+        {});
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('profiles/:email')
+    async getProfileByEmail(
+        @Param(new DtoValidationPipe()) {email}: EmailUserParamDto
+    ) {
+        return this.profilesService.send({
+            cmd: 'get-profile-by-id',
+            }, email
+        );
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('profiles/update')
+    async updateProfile(
+        @Body() dto: UpdateProfileDto
+    ) {
+        return this.profilesService.send({
+            cmd: 'update-profile',
+            }, dto,
+        );
+    }
+
+
+    @Get('auth')
+    async getUsers() {
+        return this.authService.send({
+            cmd: 'get-users',
+        },
+        {});
+    }
+
+    @Post('auth')
+    async postUser() {
+        return this.authService.send(
+            {
+                cmd: 'post-user',
+            },
+            {},
+        )
+    }
+
+
+
+    
+
+
+
 }

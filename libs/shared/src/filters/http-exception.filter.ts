@@ -1,4 +1,5 @@
 import { Catch, ArgumentsHost, HttpException, ExceptionFilter, HttpStatus } from '@nestjs/common';
+import { Observable, throwError } from 'rxjs';
 import { HttpRpcException } from '../exceptions/http.rpc.exception';
 
 type HttpResp = {
@@ -9,11 +10,14 @@ type HttpResp = {
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements  ExceptionFilter {
-    catch(exception: HttpException, host: ArgumentsHost): HttpRpcException {
+
+    catch(exception: HttpException, host: ArgumentsHost): Observable<any> {
+        // console.log(`exception in filter: ${JSON.stringify(exception)}`)
         const resp = exception.getResponse() as HttpResp;
-
+        // console.log(`resp: ${JSON.stringify(resp)}`)
         const rpcException = new HttpRpcException(resp, HttpStatus.BAD_REQUEST);
-
-        return rpcException;
+        // console.log(`rpcException: ${JSON.stringify(rpcException)}`)
+        // return rpcException;
+        return throwError(() => rpcException.getError());
     };
 }

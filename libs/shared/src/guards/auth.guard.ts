@@ -14,6 +14,8 @@ export class AuthGuard implements CanActivate {
     canActivate(
         context: ExecutionContext,
     ): boolean | Promise<boolean> | Observable<boolean> {
+        console.log(`[shared][AuthGuard] start`);
+
         if (context.getType() !== 'http') {
             return false;
         }
@@ -62,12 +64,5 @@ export class AuthGuard implements CanActivate {
                 throw new UnauthorizedException('Ошибка валидации токена');
             })
         )
-
-        throw new Error('Method not implemented.');
     }
-
-    hasJwt() {
-        return { jwt: 'token' };
-    }
-
 }

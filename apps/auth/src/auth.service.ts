@@ -13,7 +13,7 @@ export class AuthService {
         private readonly jwtService: JwtService
     ) {}
 
-    async register(userDto: CreateUserDto): Promise<{ token: string; }> {
+    async register(userDto: CreateUserDto): Promise<{ id: number; }> {
         const candidate = await this.usersService.getUserByEmail(userDto.email);
         if (candidate) {
             throw new HttpException('Пользователь с таким email уже существует', HttpStatus.BAD_REQUEST);
@@ -23,7 +23,7 @@ export class AuthService {
 
         const user = await this.usersService.createUser({...userDto, password: hashPassword});
 
-        return this.generateToken(user);
+        return { id: user.id };
     }
 
     async verifyJwt(jwt: string): Promise<{ exp: number }> {
@@ -31,20 +31,17 @@ export class AuthService {
         if (!jwt) {
             throw new UnauthorizedException('JWT токен не обнаружен');
         }
-        console.log('JWT token in here')
 
         try {
             const { exp } = await this.jwtService.verifyAsync(jwt);
-            console.log(`token_exp = ${exp}`);
             return { exp }; // Expiration
-        } catch (error) {
-            console.log(`Got error in verifyJwt: ${JSON.stringify(error)}`);    
+        } catch (error) {  
             throw new UnauthorizedException('Невалидный JWT токен');
         }
     }
 
     async login(userDto: CreateUserDto) {
-        console.log(`[login] userDto: ${JSON.stringify(userDto)}`)
+        // console.log(`[login] userDto: ${JSON.stringify(userDto)}`)
         const user = await this.validateUser(userDto);
         return this.generateToken(user);  
     }
