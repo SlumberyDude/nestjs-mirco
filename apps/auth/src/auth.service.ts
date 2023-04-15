@@ -16,7 +16,7 @@ export class AuthService {
     async register(userDto: CreateUserDto): Promise<{ id: number; }> {
         const candidate = await this.usersService.getUserByEmail(userDto.email);
         if (candidate) {
-            throw new HttpException('Пользователь с таким email уже существует', HttpStatus.BAD_REQUEST);
+            throw new HttpRpcException('Пользователь с таким email уже существует', HttpStatus.BAD_REQUEST);
         }
         
         const hashPassword = await bcrypt.hash(userDto.password, 5);

@@ -25,7 +25,8 @@ export class UsersService {
     }
 
     async getUserByEmail(email: string) {
-        return await this.userRepository.findOne({ where: {email: email}, include: {all: true} });
+        const user = await this.userRepository.findOne({ where: {email: email}, include: {all: true} });
+        return user;
     }
 
     async updateUserByEmail(email: string, dto: UpdateUserDto) {

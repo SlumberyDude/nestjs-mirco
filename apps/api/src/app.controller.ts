@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put, UseFilters, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { AuthGuard, RolesGuard, DtoValidationPipe } from 'y/shared';
+import { AuthGuard, RolesGuard, DtoValidationPipe, HttpExceptionFilter } from 'y/shared';
 import { CreateRoleDto, CreateUserDto, EmailUserParamDto, RegisterProfileDto, UpdateProfileDto } from 'y/shared/dto';
 
 @Controller()
@@ -13,32 +13,32 @@ export class AppController {
     // AUTHORIZATION SERVICE ENDPOINTS
 
     // ROLES
-    @UseGuards(AuthGuard, RolesGuard)
-    @Post('roles/create')
-    async createRole(
-        @Body() createRoleDto: CreateRoleDto
-    ) {
-        return this.authService.send(
-            {
-                cmd: 'create-role',
-            },
-            createRoleDto,
-        )
-    }
+    // @UseGuards(AuthGuard, RolesGuard)
+    // @Post('roles/create')
+    // async createRole(
+    //     @Body() createRoleDto: CreateRoleDto
+    // ) {
+    //     return this.authService.send(
+    //         {
+    //             cmd: 'create-role',
+    //         },
+    //         createRoleDto,
+    //     )
+    // }
 
     // AUTH
 
-    @Post('auth/register')
-    async register(
-        @Body() createUserDto: CreateUserDto
-    ) {
-        return this.authService.send(
-            {
-                cmd: 'register',
-            },
-            createUserDto
-        )
-    }
+    // @Post('auth/register')
+    // async register(
+    //     @Body() createUserDto: CreateUserDto
+    // ) {
+    //     return this.authService.send(
+    //         {
+    //             cmd: 'register',
+    //         },
+    //         createUserDto
+    //     )
+    // }
 
     @Post('auth/login')
     async login(
@@ -80,45 +80,33 @@ export class AppController {
         @Param(new DtoValidationPipe()) {email}: EmailUserParamDto
     ) {
         return this.profilesService.send({
-            cmd: 'get-profile-by-id',
+            cmd: 'get-profile-by-email',
             }, email
         );
     }
 
     @UseGuards(AuthGuard)
-    @Post('profiles/update')
-    async updateProfile(
-        @Body() dto: UpdateProfileDto
+    @Delete('profiles/:email')
+    async deleteProfileByEmail(
+        @Param(new DtoValidationPipe()) {email}: EmailUserParamDto
     ) {
         return this.profilesService.send({
-            cmd: 'update-profile',
-            }, dto,
+            cmd: 'delete-profile-by-email',
+            }, email
         );
     }
 
-
-    @Get('auth')
-    async getUsers() {
-        return this.authService.send({
-            cmd: 'get-users',
-        },
-        {});
+    @UseGuards(AuthGuard)
+    @Put('profiles/:email')
+    async updateProfile(
+        @Param('email') email: string,
+        @Body() dto: UpdateProfileDto
+    ) {
+        console.log(JSON.stringify(dto), JSON.stringify(email))
+        return this.profilesService.send({
+            cmd: 'update-profile-by-email',
+            }, {email: email, dto: dto},
+        );
     }
-
-    @Post('auth')
-    async postUser() {
-        return this.authService.send(
-            {
-                cmd: 'post-user',
-            },
-            {},
-        )
-    }
-
-
-
-    
-
-
 
 }

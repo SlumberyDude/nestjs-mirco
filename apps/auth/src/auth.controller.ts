@@ -1,6 +1,6 @@
 import { Controller, UseFilters, UseGuards, ValidationPipe } from '@nestjs/common';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
-import { HttpExceptionFilter, SharedService } from 'y/shared';
+import { HttpExceptionFilter, ObservableExceptionFilter, SharedService } from 'y/shared';
 import { CreateUserDto } from 'y/shared/dto';
 import { UsersService } from './users/users.service';
 import { AuthService } from './auth.service';
@@ -31,7 +31,7 @@ export class AuthController {
         return await this.userService.createUser({email: 'jenek@mail.ru', password: '123123'});
     }
 
-    @UseFilters(new HttpExceptionFilter())
+    @UseFilters(new ObservableExceptionFilter(), new HttpExceptionFilter())
     @MessagePattern({ cmd: 'register' })
     async registerUser(
         @Ctx() context: RmqContext,
@@ -42,6 +42,17 @@ export class AuthController {
         console.log(`got payload dto: ${dto.email} ${dto.password}`);
 
         return await this.authService.register(dto);
+    }
+
+    @UseFilters(new HttpExceptionFilter())
+    @MessagePattern({ cmd: 'get-user-by-email' })
+    async getUserByEmail(
+        @Ctx() context: RmqContext,
+        @Payload() email: string
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+
+        return await this.userService.getUserByEmail(email);
     }
 
     @MessagePattern({ cmd: 'verify-jwt'})

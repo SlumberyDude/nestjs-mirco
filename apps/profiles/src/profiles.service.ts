@@ -2,8 +2,9 @@ import { HttpException, Inject, Injectable, UnauthorizedException } from '@nestj
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/sequelize';
 import { catchError, firstValueFrom, Observable, of, switchMap } from 'rxjs';
-import { CreateProfileDto, RegisterProfileDto } from 'y/shared/dto';
+import { CreateProfileDto, RegisterProfileDto, UpdateProfileDto } from 'y/shared/dto';
 import { Profile } from './profiles.model';
+import { ReturnProfile } from './types';
 
 @Injectable()
 export class ProfilesService {
@@ -12,11 +13,6 @@ export class ProfilesService {
         @InjectModel(Profile) private profileRepository: typeof Profile,
         @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
     ) {}
-
-
-    getHello(): string {
-        return 'Hello World!';
-    }
 
     async registration(registerProfileDto: RegisterProfileDto) {
         console.log(`[profiles][registration] service. registerProfileDto: \n${JSON.stringify(registerProfileDto)}`);
@@ -39,41 +35,60 @@ export class ProfilesService {
         return await this.profileRepository.create({...registerProfileDto, user_id: id});
     }
 
-    // async getAllProfiles() {
-    // return await this.profileRepository.findAll({
-    // include: {all: true, nested: true},
-    // });
-    // }
+    async getAllProfiles() {
+        return await this.profileRepository.findAll();
+    }
 
-    // async getProfileByEmail(email: string) {
-    // const user = await this.userService.getUserByEmail(email);
+    private async findUser(email: string): Promise<{id: number, email: string}> {
 
-    // if (!user) {
-    // throw new HttpException(`Нет пользователя с email ${email}`, HttpStatus.NOT_FOUND);
-    // }
+        const user$ = this.authService.send({ cmd: 'get-user-by-email' }, email).pipe(
+            switchMap((user) => {
+                const { id } = user;
+                if (!id) {
+                    throw new UnauthorizedException(user);
+                }
+                return of(user)
+            }),
+            catchError( (error) => {
+                throw new UnauthorizedException(error);
+            })
+        )
 
-    // return await this.profileRepository.findOne({
-    // where: {user_id: user.id}, 
-    // include: {all: true, nested: true},
-    // });
-    // }
+        return await firstValueFrom(user$);
+    } 
 
-    // async updateProfileByEmail(email: string, updateProfileDto: UpdateProfileDto) {
-    // const profile = await this.getProfileByEmail(email);
-    // await profile.update(updateProfileDto);
-    // return profile
-    // }
+    async getProfileByEmail(aemail: string): Promise<ReturnProfile> {
 
-    // async deleteProfileByEmail(email: string) {
-    // const user = await this.userService.getUserByEmail(email);
+        const user = await this.findUser(aemail);
 
-    // if (!user) return;
+        const profile = await this.profileRepository.findOne({
+            where: {user_id: user.id}
+        });
 
-    // const profile = await this.profileRepository.findOne({ where: {user_id: user.id} });
+        return {
+            ...profile.dataValues,
+            email: user.email,
+        }
+    }
 
-    // await profile.destroy();
+    async updateProfileByEmail(email: string, updateProfileDto: UpdateProfileDto) {
+        const {id} = await this.findUser(email);
+        const profile = await this.profileRepository.findOne({
+            where: {user_id: id}
+        });
+        
+        await profile.update(updateProfileDto);
+        return profile
+    }
 
-    // await this.userService.deleteUserByEmail(email);
-    // }
+    async deleteProfileByEmail(email: string) {
+        const {id} = await this.findUser(email);
+
+        const profile = await this.profileRepository.findOne({ where: {user_id: id} });
+
+        await profile.destroy();
+        // Пользователя не удаляем при этом
+        // await this.userService.deleteUserByEmail(email); 
+    }
 
 }

@@ -11,6 +11,7 @@ export * from './pipes/dto-validation.pipe';
 
 // filters
 export * from './filters/http-exception.filter';
+export * from './filters/observable.exception.filter';
 
 // exceptions
 export * from './exceptions/http.rpc.exception'
