@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/sequelize';
 import { catchError, firstValueFrom, Observable, of, switchMap } from 'rxjs';
@@ -64,6 +64,10 @@ export class ProfilesService {
         const profile = await this.profileRepository.findOne({
             where: {user_id: user.id}
         });
+
+        if (!profile) {
+            throw new HttpException(`У пользователя ${user.email} нет профиля`, HttpStatus.NOT_FOUND);
+        }
 
         return {
             ...profile.dataValues,
