@@ -5,6 +5,7 @@ import { User } from './users/users.model';
 import { UsersService } from './users/users.service';
 import * as bcrypt from 'bcryptjs';
 import { HttpRpcException } from 'y/shared';
+import { Role } from './roles/roles.model';
 
 @Injectable()
 export class AuthService {
@@ -26,15 +27,17 @@ export class AuthService {
         return { id: user.id };
     }
 
-    async verifyJwt(jwt: string): Promise<{ exp: number }> {
+    async verifyJwt(jwt: string): Promise<{ exp: number, email: string, roles: Role[] }> {
 
         if (!jwt) {
             throw new UnauthorizedException('JWT токен не обнаружен');
         }
 
         try {
-            const { exp } = await this.jwtService.verifyAsync(jwt);
-            return { exp }; // Expiration
+            const { exp, email, roles } = await this.jwtService.verifyAsync(jwt) as {exp: number, email: string, roles: Role[]};
+            // console.log(`[auth][auth.service][verifyJwt] payload exp = ${JSON.stringify(exp)}`);
+            // console.log(`[auth][auth.service][verifyJwt] payload roles = ${JSON.stringify(roles)}`);
+            return { exp, email, roles };
         } catch (error) {  
             throw new UnauthorizedException('Невалидный JWT токен');
         }
@@ -56,8 +59,8 @@ export class AuthService {
     }
 
     private async generateToken(user: User) {
-        // const payload = { email: user.email, id: user.id, roles: user.roles };
-        const payload = { email: user.email, id: user.id };
+        const payload = { email: user.email, id: user.id, roles: user.roles };
+        // const payload = { email: user.email, id: user.id };
         return {
             token: this.jwtService.sign(payload)
         }

@@ -1,19 +1,28 @@
-import { Body, Controller, Post, UsePipes } from '@nestjs/common';
+import { Controller, UseFilters } from '@nestjs/common';
+import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
-// import { ValidationPipe } from '../pipes/validation.pipe';
+import { DtoValidationPipe, HttpExceptionFilter, ObservableExceptionFilter, SharedService } from 'y/shared';
 import { InitDto } from './dto/init.dto';
 import { InitService } from './init.service';
 
 @ApiTags('Инициализация приложения')
-// @UsePipes(ValidationPipe)
 @Controller('init')
 export class InitController {
 
-    constructor(private initService: InitService) {}
+    constructor(
+        private initService: InitService,
+        private readonly sharedService: SharedService,
+    ) {}
 
-    @Post()
-    createAdminAndRoles(@Body() initDto: InitDto) {
-        return this.initService.createAdminAndRoles(initDto);
+    @UseFilters(new HttpExceptionFilter(), new ObservableExceptionFilter())
+    @MessagePattern({ cmd: 'init-server' })
+    async createAdminAndRoles(
+        @Ctx() context: RmqContext,
+        @Payload( new DtoValidationPipe() ) dto: InitDto,
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+
+        return await this.initService.createAdminAndRoles(dto);
     }
     
 }

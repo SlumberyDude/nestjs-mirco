@@ -1,9 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { CreateUserDto } from 'y/shared/dto';
+import { AddRoleDto, AddRoleDtoEmail, CreateUserDto, UpdateUserDto } from 'y/shared/dto';
 import { RolesService } from '../roles/roles.service';
-import { AddRoleDto } from './dto/add-role.dto';
-import { UpdateUserDto } from './dto/update.user.dto';
 import { User } from './users.model';
 
 @Injectable()
@@ -15,8 +13,20 @@ export class UsersService {
     ) {}
 
     async createUser(dto: CreateUserDto) {
-        console.log(`Dto in usersService: ${dto}`);
-        const user = await this.userRepository.create(dto);
+        const role = await this.roleService.getRoleByName('USER');
+
+        console.log(`[auth][users.service][createUser] role = ${JSON.stringify(role)}`);
+
+        if (role === null) { throw new HttpException(
+            "Роль 'USER' не найдена, необходимо выполнение инициализации ресурса",
+            HttpStatus.I_AM_A_TEAPOT
+        )}
+        
+        let user = await this.userRepository.create(dto);
+        await user.$set('roles', [role.id]); // $set позволяет изменить объект и сразу обновить его в базе
+
+        user.roles = [role]; // Не понимаю, почему не выходит присвоение свойства к модели роли! Вроде был в модели поле есть, да и отдаетсяя в другом эндпоинте по email вполне нормально. Непонятно.
+        // console.log(`[auth][users.service][createUser] user = ${JSON.stringify(user)}`);
         return user;
     }
 
@@ -56,7 +66,19 @@ export class UsersService {
 
         if (role && user) {
             await user.$add('roles', role.id);
-            return dto;
+            return user;
+        }
+        
+        throw new HttpException('Пользователь или роль не найдены', HttpStatus.NOT_FOUND);
+    }
+
+    async addRoleByEmail(dto: AddRoleDtoEmail) {
+        const role = await this.roleService.getRoleByName(dto.roleName);
+        const user = await this.userRepository.findOne({ where: {email: dto.email} });
+
+        if (role && user) {
+            await user.$add('roles', role.id);
+            return user;
         }
         
         throw new HttpException('Пользователь или роль не найдены', HttpStatus.NOT_FOUND);

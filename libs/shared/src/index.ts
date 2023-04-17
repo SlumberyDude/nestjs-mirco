@@ -14,4 +14,8 @@ export * from './filters/http-exception.filter';
 export * from './filters/observable.exception.filter';
 
 // exceptions
-export * from './exceptions/http.rpc.exception'
+export * from './exceptions/http.rpc.exception';
+
+// decorators
+export * from './decorators/roles.decorator';
+export * from './decorators/user-permission.decorator';

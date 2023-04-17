@@ -4,7 +4,7 @@ import { AuthService } from '../auth.service';
 import { RolesService } from '../roles/roles.service';
 import { UsersService } from '../users/users.service';
 import { InitDto } from './dto/init.dto';
-import { initRoles } from './init.roles';
+import { initRoles } from 'y/shared';
 
 @Injectable()
 export class InitService {
@@ -14,7 +14,7 @@ export class InitService {
                 private userService: UsersService,
                 private jwtService: JwtService ) {}
 
-    async createAdminAndRoles(initDto: InitDto): Promise<{ token: string; }> {
+    async createAdminAndRoles(initDto: InitDto) {
         // Метод должен быть вызван только единожды, поэтому проверяем, есть ли уже роль OWNER и как следствие главный админ
         const hasOwner = await this.roleService.getRoleByName(initRoles['OWNER'].name);
         if (hasOwner) {
@@ -32,6 +32,6 @@ export class InitService {
 
         // Присвоим владельцу ресурса соответствующую роль
         await this.userService.addRole({userId: id, roleName: initRoles['OWNER'].name});
-        return;
+        return {"message": "Администратор ресурса и базовые роли созданы успешно, наслаждайтесь."};
     }
 }

@@ -4,7 +4,6 @@ import { HttpExceptionFilter, ObservableExceptionFilter, SharedService } from 'y
 import { CreateUserDto } from 'y/shared/dto';
 import { UsersService } from './users/users.service';
 import { AuthService } from './auth.service';
-import { RolesGuard } from './roles.guard';
 import { DtoValidationPipe } from 'y/shared/pipes/dto-validation.pipe';
 
 @Controller()
@@ -57,7 +56,6 @@ export class AuthController {
 
     @MessagePattern({ cmd: 'verify-jwt'})
     @UseFilters(new HttpExceptionFilter())
-    @UseGuards(RolesGuard)
     async verifyJwt(
         @Ctx() context: RmqContext,
         @Payload() payload: { jwt: string },

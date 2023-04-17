@@ -58,7 +58,7 @@ export class ProfilesService {
     } 
 
     async getProfileByEmail(aemail: string): Promise<ReturnProfile> {
-
+        console.log(`[profiles][profiles.service][getProfileByEmail] email: ${aemail}`);
         const user = await this.findUser(aemail);
 
         const profile = await this.profileRepository.findOne({

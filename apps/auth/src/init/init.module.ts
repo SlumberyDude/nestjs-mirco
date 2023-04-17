@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { SharedModule } from 'y/shared';
 import { AuthModule } from '../auth.module';
@@ -11,12 +11,13 @@ import { InitService } from './init.service';
     controllers: [InitController],
     providers: [InitService],
     imports: [
-        // SharedModule, // для 
-        AuthModule, // для регистрации владельца ресурса
+        SharedModule,
+        forwardRef(() => AuthModule), // для регистрации владельца ресурса
         RolesModule, // для создания и проверки ролей
 
         UsersModule, // для addRole
         JwtModule // для получения id пользователя без необходимости менять метод регистрации
-    ]
+    ],
+    exports: []
 })
 export class InitModule {}

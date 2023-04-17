@@ -2,6 +2,8 @@
 // Users
 export * from './user/create-user.dto';
 export * from './user/email-user.param.dto';
+export * from './user/add-role.dto';
+export * from './user/update-user.dto';
 
 
 // Roles

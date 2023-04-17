@@ -1,20 +1,53 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UsePipes } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AddRoleDto } from './dto/add-role.dto';
-import { User } from './users.model';
+import { Controller, UseFilters } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { initRoles } from '../init/init.roles';
-import { UpdateUserDto } from './dto/update.user.dto';
-// import { RoleAccess } from '../auth/roles.decorator';
-// import { RolesGuard } from '../roles.guard';
-import { EmailUserParamDto } from './dto/email.user.param.dto';
+import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
+import { DtoValidationPipe, HttpExceptionFilter, ObservableExceptionFilter, SharedService, UserPermission } from 'y/shared';
+import { AddRoleDtoEmail, CreateUserDto } from 'y/shared/dto';
 
 // @UsePipes(ValidationPipe)
 // @ApiTags('Пользователи')
 @Controller('users')
 export class UsersController {
 
-    constructor(private usersService: UsersService) {}
+    constructor(
+        private usersService: UsersService,
+        private readonly sharedService: SharedService,
+    ) {}
+
+    @UseFilters(new HttpExceptionFilter())
+    @MessagePattern({ cmd: 'get-user-by-email' })
+    async getUser(
+        @Ctx() context: RmqContext,
+        @Payload() email: string,
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+        console.log(`[auth][users.controller][getUserByEmail] email: ${JSON.stringify(email)}`);
+
+        return await this.usersService.getUserByEmail(email);
+    }
+
+    @UseFilters(new HttpExceptionFilter())
+    @MessagePattern({ cmd: 'create-user' })
+    async createUser(
+        @Ctx() context: RmqContext,
+        @Payload( new DtoValidationPipe() ) dto: CreateUserDto,
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+        console.log(`[auth][users.controller][createUser] +`);
+
+        return await this.usersService.createUser(dto);
+    }
+
+    @UseFilters(new HttpExceptionFilter())
+    @MessagePattern({ cmd: 'add-role-to-user' })
+    async addRole(
+        @Ctx() context: RmqContext,
+        @Payload( new DtoValidationPipe() ) dto: AddRoleDtoEmail,
+    ) {
+        this.sharedService.acknowledgeMessage(context);
+
+        return await this.usersService.addRoleByEmail(dto);
+    }
 
 /*
     @ApiOperation({ summary: 'Получение всех пользователей' })
@@ -59,13 +92,13 @@ export class UsersController {
         return this.usersService.deleteUserByEmail(email);
     }
 */
-    @ApiOperation({ summary: 'Выдача роли пользователю' })
-    @ApiResponse({ status: 200 })
-    // @RoleAccess(initRoles['ADMIN'].value)
-    // @UseGuards(RolesGuard)
-    @Post('/role')
-    addRole(@Body() roleDto: AddRoleDto) {
-        return this.usersService.addRole(roleDto);
-    }
+    // @ApiOperation({ summary: 'Выдача роли пользователю' })
+    // @ApiResponse({ status: 200 })
+    // // @RoleAccess(initRoles['ADMIN'].value)
+    // // @UseGuards(RolesGuard)
+    // @Post('/role')
+    // addRole(@Body() roleDto: AddRoleDto) {
+    //     return this.usersService.addRole(roleDto);
+    // }
 
 }
